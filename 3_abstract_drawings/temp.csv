@@ -1,0 +1,5 @@
+,mean,std,significant,Color,Feature
+training_method_clip,0.7770785860944586,0.1275074238008143,True,#5A509B,training_method_clip
+backbone_cnn,0.01008607663460657,0.01166250711610576,False,#888,backbone_cnn
+number_parameters,0.01568817486434014,0.01576331721563228,False,#888,number_parameters
+train_set_size,0.1374142521600291,0.046879994233490464,True,#5A509B,train_set_size

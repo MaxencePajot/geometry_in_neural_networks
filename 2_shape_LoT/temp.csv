@@ -1,0 +1,5 @@
+,mean,std,significant,Color,Feature
+training_method_supervised,0.0370216612070745,0.022223761935197508,False,#888,training_method_supervised
+backbone_vit,0.17479035440030885,0.05065926039547552,True,#5A509B,backbone_vit
+number_parameters,0.09596328489035542,0.046542676287497434,False,#888,number_parameters
+train_set_size,1.454749355407294,0.22476570067826634,True,#5A509B,train_set_size

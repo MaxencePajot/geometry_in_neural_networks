@@ -1,0 +1,6 @@
+,model,r_both
+0,dinov3_small,0.7076750429925045
+1,dinov3_base,0.6888260590944904
+2,vit_giant_patch14_clip_224.laion2b,0.671963003811284
+3,dinov3_convnext_tiny,0.7081894048656467
+4,vit_large_patch14_clip_224.laion2b,0.7343724987981861
