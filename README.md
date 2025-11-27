@@ -6,11 +6,11 @@ Can Neural networks model the human perception of geometric shapes?
 
 The environment is a python 3.10 environment. The list of dependencies is listed in the pyproject.toml file. To reproduce the environment used, use the command line:
 
-'uv sync'
+`uv sync`
 
 or 
 
-'pip install requirements.txt'
+`pip install requirements.txt`
 
 You also need R for the plots. The R version used is 4.5.0
 
