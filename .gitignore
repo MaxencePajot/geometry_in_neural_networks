@@ -10,3 +10,6 @@ wheels/
 .venv
 
 cornet/cornet_s-1d3f7974.pth
+
+#Scratch
+scratch/
