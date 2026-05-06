@@ -21,13 +21,23 @@ import_names_dict = {'dino_small':'facebook/dinov2-small',
                      'dino_large':'facebook/dinov2-large',
                      'dino_giant':'facebook/dinov2-giant',
 
+                     'dinov3_small':'facebook/dinov3-vits16-pretrain-lvd1689m',
+                     'dinov3_base':'facebook/dinov3-vitb16-pretrain-lvd1689m',
+                     'dinov3_large':'facebook/dinov3-vitl16-pretrain-lvd1689m',
+                     'dinov3_huge':'facebook/dinov3-vith16plus-pretrain-lvd1689m',
+                     'dinov3_7b':'facebook/dinov3-vit7b16-pretrain-lvd1689m',
+                     'dinov3_convnext_tiny':'facebook/dinov3-convnext-tiny-pretrain-lvd1689m',
+                     'dinov3_convnext_small':'facebook/dinov3-convnext-small-pretrain-lvd1689m',
+                     'dinov3_convnext_base':'facebook/dinov3-convnext-base-pretrain-lvd1689m',
+                     'dinov3_convnext_large':'facebook/dinov3-convnext-large-pretrain-lvd1689m',
+
                      'vit_tiny_in22k':'WinKawaks/vit-tiny-patch16-224',
                      'vit_small_in22k':'WinKawaks/vit-small-patch16-224',
                      'vit_base_in22k':"google/vit-base-patch16-224-in21k",
                      'vit_large_in22k':"google/vit-large-patch16-224-in21k",
                      'vit_huge_in22k':"google/vit-huge-patch14-224-in21k",
 
-                     
+
 
 }
 
@@ -47,6 +57,18 @@ train_set_dict = {## vision transformers
                 'dino_base':'LVD-142M',
                 'dino_large':'LVD-142M',
                 'dino_giant':'LVD-142M',
+
+                'dinov3_small':'LVD-1689M',
+                'dinov3_base':'LVD-1689M',
+                'dinov3_large':'LVD-1689M',
+                'dinov3_huge':'LVD-1689M',
+                'dinov3_7b':'LVD-1689M',
+                'dinov3_convnext_tiny':'LVD-1689M',
+                'dinov3_convnext_small':'LVD-1689M',
+                'dinov3_convnext_base':'LVD-1689M',
+                'dinov3_convnext_large':'LVD-1689M',
+
+                'cornet':'in1k',
 
                 'vit_base_patch16_clip_224.openai':'openai-400m',
                 'vit_large_patch14_clip_224.openai':'openai-400m',
@@ -104,6 +126,41 @@ def get_model(model_name):
             lst.append(last_layer)
             return lst
         
+
+    ######################
+    ## CORnet
+    #####################
+    elif model_name == 'cornet':
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from cornet.cornet_s import CORnet_S
+        model = CORnet_S()
+        checkpoint = torch.load('cornet/cornet_s-1d3f7974.pth', map_location=device)
+        state_dict = checkpoint.get('state_dict', checkpoint)
+        if any(k.startswith('module.') for k in state_dict.keys()):
+            state_dict = {k[7:]: v for k, v in state_dict.items()}
+        model.load_state_dict(state_dict)
+        model = model.to(device).eval()
+
+        def net(imgs):
+            hidden_states = {}
+            def get_features(name):
+                def hook(module, input, output):
+                    hidden_states[name] = output.to(device)
+                return hook
+            for name, layer in model.named_modules():
+                if name.endswith('.output'):
+                    layer.register_forward_hook(get_features(name))
+            transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+            transformed = list(map(transform, imgs))
+            inputs = torch.stack(transformed).to(device)
+            model(inputs)
+            return list(hidden_states.values())
 
     ######################
     ## Timm models
