@@ -115,26 +115,24 @@ def main(model_name='dino_small', method='avgdist'):
 
         os.makedirs(f'1_quadrilaterals/RDMs_avgdist/{model_name}/', exist_ok=True)
 
-        for layer_idx in range(n_layers):
-            rdm = np.zeros((11, 11))
-            for s1 in range(11):
-                for s2 in range(11):
-                    cross = distance.cdist(embeddings_by_shape[s1][layer_idx], embeddings_by_shape[s2][layer_idx])
-                    rdm[s1, s2] = cross.mean()
-            df = pd.DataFrame(rdm, columns=shapes, index=shapes)
-            df.to_csv(f'1_quadrilaterals/RDMs_avgdist/{model_name}/layer_{layer_idx}')
+        all_metrics = [None, 'cosine', 'correlation']
+        for metric in all_metrics:
+            if metric is None:
+                out_dir = f'1_quadrilaterals/RDMs_avgdist/{model_name}/'
+            else:
+                out_dir = f'1_quadrilaterals/RDMs_avgdist/z_other_metrics/{metric}/{model_name}/'
+            os.makedirs(out_dir, exist_ok=True)
 
-        other_metrics = ['cosine', 'correlation']
-        for metric in other_metrics:
-            os.makedirs(f'1_quadrilaterals/RDMs_avgdist/z_other_metrics/{metric}/{model_name}/', exist_ok=True)
             for layer_idx in range(n_layers):
-                rdm = np.zeros((11, 11))
-                for s1 in range(11):
-                    for s2 in range(11):
-                        cross = distance.cdist(embeddings_by_shape[s1][layer_idx], embeddings_by_shape[s2][layer_idx], metric=metric)
-                        rdm[s1, s2] = cross.mean()
+                # Stack all 11*36 embeddings, call cdist once, then average 36x36 blocks
+                stacked = np.vstack([embeddings_by_shape[s][layer_idx] for s in range(11)])
+                full_dist = distance.cdist(stacked, stacked) if metric is None else distance.cdist(stacked, stacked, metric=metric)
+                rdm = np.array([
+                    [full_dist[s1*36:(s1+1)*36, s2*36:(s2+1)*36].mean() for s2 in range(11)]
+                    for s1 in range(11)
+                ])
                 df = pd.DataFrame(rdm, columns=shapes, index=shapes)
-                df.to_csv(f'1_quadrilaterals/RDMs_avgdist/z_other_metrics/{metric}/{model_name}/layer_{layer_idx}')
+                df.to_csv(f'{out_dir}layer_{layer_idx}')
 
 if __name__ == "__main__":
     fire.Fire(main)
