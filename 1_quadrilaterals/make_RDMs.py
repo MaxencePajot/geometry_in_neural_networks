@@ -28,7 +28,7 @@ types = ["reference"]
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def main(model_name='dino_small', method='prototype'):
+def main(model_name='dino_small', method='avgdist'):
 
     net = get_model.get_model(model_name)
 
