@@ -4,6 +4,7 @@ from itertools import product
 import fire
 from scipy.spatial import distance
 import pandas as pd
+import numpy as np
 import os
 import sys
 
@@ -93,40 +94,46 @@ def main(model_name='dino_small', method='avgdist'):
 
     elif method == 'avgdist':
 
-        # For each (rotation, scale) instance, embed all 11 shapes and cache the flat embeddings.
-        # RDM entries are then the mean pairwise distance across instances.
-        embeddings_cache = None  # list of lists: [layer_idx][instance_idx] = (11, features) array
+        # Collect all 36 (rotation x scale) embeddings per shape, then compute the mean
+        # distance across all 36x36 cross-instance pairs for each shape pair.
+        # embeddings_by_shape[s][layer_idx] = (36, features) array
+        embeddings_by_shape = [None] * 11
 
-        for d, r in product(range(6), range(6)):
+        for s in range(11):
             images = [
                 Image.open(f"1_quadrilaterals/stimuli/geom_{shapes[s]}_{types[0]}_{1+d}_{1+r}.png").convert("RGB")
-                for s in range(11)
+                for d, r in product(range(6), range(6))
             ]
             with torch.no_grad():
                 outputs = net(images)
+            embeddings_by_shape[s] = [
+                layer_output.flatten(start_dim=1).detach().cpu().numpy()
+                for layer_output in outputs
+            ]
 
-            if embeddings_cache is None:
-                embeddings_cache = [[] for _ in range(len(outputs))]
-
-            for layer_idx, layer_output in enumerate(outputs):
-                flat = layer_output.flatten(start_dim=1).detach().cpu().numpy()
-                embeddings_cache[layer_idx].append(flat)
-
-        n_instances = 6 * 6
+        n_layers = len(embeddings_by_shape[0])
 
         os.makedirs(f'1_quadrilaterals/RDMs_avgdist/{model_name}/', exist_ok=True)
 
-        for layer_idx in range(len(embeddings_cache)):
-            rdm_avg = sum(distance.cdist(flat, flat) for flat in embeddings_cache[layer_idx]) / n_instances
-            df = pd.DataFrame(rdm_avg, columns=shapes, index=shapes)
+        for layer_idx in range(n_layers):
+            rdm = np.zeros((11, 11))
+            for s1 in range(11):
+                for s2 in range(11):
+                    cross = distance.cdist(embeddings_by_shape[s1][layer_idx], embeddings_by_shape[s2][layer_idx])
+                    rdm[s1, s2] = cross.mean()
+            df = pd.DataFrame(rdm, columns=shapes, index=shapes)
             df.to_csv(f'1_quadrilaterals/RDMs_avgdist/{model_name}/layer_{layer_idx}')
 
         other_metrics = ['cosine', 'correlation']
         for metric in other_metrics:
             os.makedirs(f'1_quadrilaterals/RDMs_avgdist/z_other_metrics/{metric}/{model_name}/', exist_ok=True)
-            for layer_idx in range(len(embeddings_cache)):
-                rdm_avg = sum(distance.cdist(flat, flat, metric=metric) for flat in embeddings_cache[layer_idx]) / n_instances
-                df = pd.DataFrame(rdm_avg, columns=shapes, index=shapes)
+            for layer_idx in range(n_layers):
+                rdm = np.zeros((11, 11))
+                for s1 in range(11):
+                    for s2 in range(11):
+                        cross = distance.cdist(embeddings_by_shape[s1][layer_idx], embeddings_by_shape[s2][layer_idx], metric=metric)
+                        rdm[s1, s2] = cross.mean()
+                df = pd.DataFrame(rdm, columns=shapes, index=shapes)
                 df.to_csv(f'1_quadrilaterals/RDMs_avgdist/z_other_metrics/{metric}/{model_name}/layer_{layer_idx}')
 
 if __name__ == "__main__":
