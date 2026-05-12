@@ -170,7 +170,7 @@ def get_model(model_name):
         model = model.eval()
         data_config = timm.data.resolve_model_data_config(model)
         transforms = timm.data.create_transform(**data_config, is_training=False)
-        if ('convnext' or 'resnet') in model_name:
+        if 'convnext' in model_name or 'resnet' in model_name:
              def net(imgs):
                 transformed = list(map(transforms, imgs))
                 inputs = torch.stack(transformed).to(device)
