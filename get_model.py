@@ -134,8 +134,9 @@ def get_model(model_name):
         import sys
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from cornet.cornet_s import CORnet_S
+        import torchvision.transforms as transforms
         model = CORnet_S()
-        checkpoint = torch.load('cornet/cornet_s-1d3f7974.pth', map_location=device)
+        checkpoint = torch.load('cornet/cornet_s-1d3f7974.pth', map_location=device, weights_only=False)
         state_dict = checkpoint.get('state_dict', checkpoint)
         if any(k.startswith('module.') for k in state_dict.keys()):
             state_dict = {k[7:]: v for k, v in state_dict.items()}
