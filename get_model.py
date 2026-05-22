@@ -15,6 +15,7 @@ import pandas as pd
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+token = os.environ.get('HF_TOKEN')
 
 import_names_dict = {'dino_small':'facebook/dinov2-small',
                      'dino_base':'facebook/dinov2-base',
@@ -114,8 +115,8 @@ def get_model(model_name):
     #####################
     if model_name in import_names_dict.keys():
         import_model_name = import_names_dict[model_name]
-        processor = AutoImageProcessor.from_pretrained(import_model_name)
-        model = AutoModel.from_pretrained(import_model_name).to(device)
+        processor = AutoImageProcessor.from_pretrained(import_model_name, token=token)
+        model = AutoModel.from_pretrained(import_model_name, token=token).to(device)
 
         def net(imgs):
             inputs = processor(images=imgs, return_tensors="pt").to(device)
