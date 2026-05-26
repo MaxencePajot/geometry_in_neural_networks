@@ -115,8 +115,8 @@ def main(model_name='dino_small', method='avgdist'):
 
         os.makedirs(f'1_quadrilaterals/RDMs_avgdist/{model_name}/', exist_ok=True)
 
-        all_metrics = ['cosine', 'correlation']
-        # all_metrics = [None, 'cosine', 'correlation']
+        # all_metrics = [None]
+        all_metrics = [None, 'cosine', 'correlation']
 
         for metric in all_metrics:
             if metric is None:
